@@ -121,7 +121,7 @@ class SelfConditionedExemplarConformerEncoder(NeuralModule, Exportable):
         return OrderedDict(
             {
                 "audio_signal": NeuralType(('B', 'D', 'T'), SpectrogramType()),
-                # "labels": NeuralType(('B', 'T'), SpectrogramType()),
+                "ex_labels": NeuralType(('B', 'T'), SpectrogramType()),
                 # "labels_lengths": NeuralType(('B'), LabelsType()),
                 "decoder": NeuralType(None),
                 "length": NeuralType(tuple('B'), LengthsType())
@@ -316,18 +316,18 @@ class SelfConditionedExemplarConformerEncoder(NeuralModule, Exportable):
 
     @typecheck()
     # def forward(self, audio_signal, labels, labels_lengths, decoder, length=None):
-    def forward(self, audio_signal, decoder, length=None):
+    def forward(self, audio_signal, decoder, length=None, ex_labels=None):
         self.update_max_seq_length(seq_length=audio_signal.size(2), device=audio_signal.device)
         return self.forward_for_export(
             audio_signal=audio_signal, 
-            # labels=labels, 
+            ex_labels=ex_labels, 
             # labels_lengths=labels_lengths, 
             decoder=decoder, 
             length=length)
 
     @typecheck()
     # def forward_for_export(self, audio_signal, labels, labels_lengths, decoder, length):
-    def forward_for_export(self, audio_signal, decoder, length):
+    def forward_for_export(self, audio_signal, decoder, length, ex_labels):
         max_audio_length: int = audio_signal.size(-1)
 
         if max_audio_length > self.max_audio_length:
@@ -372,7 +372,7 @@ class SelfConditionedExemplarConformerEncoder(NeuralModule, Exportable):
         A, _ = self.exMod(
             features = audio_signal,
             ex_features = audio_signal,
-            ex_phones = None
+            ex_phones = ex_labels
         )
 
 

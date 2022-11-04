@@ -345,8 +345,8 @@ class nnExemplarsSimple(nn.Module):
         # self.attDim = attDim
         # self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-        # self.V = nn.Linear(inputSize, inputSize, bias = False)
-        # self.V.apply(init_weights_identity)
+        self.V = nn.Linear(inputSize, inputSize, bias = False)
+        self.V.apply(init_weights_identity)
 
 
         self.sm = nn.Softmax(dim = 1)
@@ -366,12 +366,90 @@ class nnExemplarsSimple(nn.Module):
         # print("submod viewed features size:", features.size())
         # print("submod viewed ex_features size:", ex_features.size())
 
-        # W = torch.matmul(self.V(features), torch.t(nn.functional.normalize(ex_features, dim = -1)))
-        W = torch.matmul(features, torch.t(nn.functional.normalize(ex_features, dim = -1)))
+        W = torch.matmul(self.V(features), torch.t(nn.functional.normalize(ex_features, dim = -1)))
+        # W = torch.matmul(features, torch.t(nn.functional.normalize(ex_features, dim = -1)))
 
         # print("submod W size:", W.size())
 
-        A = torch.matmul(self.sm(1000 * W), ex_features)
+        A = torch.matmul(self.sm(1 * W), ex_features)
+
+        # print("submod A size:", A.size())
+
+        A = A.reshape(featuresSize)
+        
+        # print("submod final A size:", A.size())
+
+        return A, W
+
+
+
+
+class nnExemplarsSimple(nn.Module):
+    # Exemplar model incorporating multi-head attention for exemplar weighting, 
+    # with separate attention for the acoustic and phonetic information.
+    def __init__(
+            self, 
+            num_phones = 129, 
+            inputSize = 176, 
+            phoneEmbedDim = 4,
+            Q_dim = 32,
+            V_dim = 32, 
+            numHeads = 2, 
+            attDim = 256, 
+            dropout_ex_r = 0.0, 
+            dropout_ex_g = 0.0
+            ):
+        super(nnExemplarsSimple, self).__init__()
+
+        self.phoneEmbed_stack = nn.Linear(inputSize, inputSize, bias = False)
+
+        self.num_phones = num_phones
+        # self.phoneEmbedDim = phoneEmbedDim
+        # self.phoneContext = 0
+        # self.Q_dim = Q_dim
+        # self.inputSize = inputSize
+        # self.attDim = attDim
+        # self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+        self.phoneEmbed_stack = nn.Linear(num_phones, phoneEmbedDim, bias = False)
+
+        self.V = nn.Linear(inputSize, inputSize, bias = False)
+        self.V.apply(init_weights_identity)
+
+        self.correctionLayer =  nn.Linear(inputSize + phoneEmbedDim, inputSize)
+
+        self.sm = nn.Softmax(dim = 1)
+
+
+    def forward(self, features, ex_features, ex_phones, gamma = 1.0):
+
+        featuresSize = features.size()
+        # ex_features = ex_features[0:int(round(featuresSize[0] / 2, 0))]
+
+        # print("submod features size:", features.size())
+        # print("submod ex_features size:", ex_features.size())
+
+        features = features.view(features.size()[0] * features.size()[1], -1)
+        ex_features = ex_features.view(ex_features.size()[0] * ex_features.size()[1], -1)
+
+        # print("submod ex_phones size:", ex_phones.size())
+
+        oneHotPhones = torch.nn.functional.one_hot(ex_phones, self.num_phones).float()
+        # print("submod oneHotPhones size:", oneHotPhones.size())
+        phoneEmbed = self.phoneEmbed_stack(oneHotPhones.view(oneHotPhones.size()[0] * oneHotPhones.size()[1], -1))
+        # print("submod phoneEmbed size:", phoneEmbed.size())        
+
+        # print("submod viewed features size:", features.size())
+        # print("submod viewed ex_features size:", ex_features.size())
+
+        W = torch.matmul(self.V(features), torch.t(nn.functional.normalize(ex_features, dim = -1)))
+        # W = torch.matmul(features, torch.t(nn.functional.normalize(ex_features, dim = -1)))
+
+        # print("submod W size:", W.size())
+
+        A = torch.matmul(self.sm(1000 * W), torch.cat((ex_features, phoneEmbed), dim = -1))
+
+        A = self.correctionLayer(A)
 
         # print("submod A size:", A.size())
 
