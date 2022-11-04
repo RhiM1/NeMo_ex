@@ -399,7 +399,7 @@ class nnExemplarsSimplePhones(nn.Module):
             dropout_ex_r = 0.0, 
             dropout_ex_g = 0.0
             ):
-        super(nnExemplarsSimple, self).__init__()
+        super(nnExemplarsSimplePhones, self).__init__()
 
         self.phoneEmbed_stack = nn.Linear(inputSize, inputSize, bias = False)
 
