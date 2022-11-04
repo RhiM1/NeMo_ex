@@ -401,7 +401,7 @@ class nnExemplarsSimplePhones(nn.Module):
             ):
         super(nnExemplarsSimplePhones, self).__init__()
 
-        self.phoneEmbed_stack = nn.Linear(inputSize, inputSize, bias = False)
+        # self.phoneEmbed_stack = nn.Linear(inputSize, inputSize, bias = False)
 
         self.num_phones = num_phones
         # self.phoneEmbedDim = phoneEmbedDim
