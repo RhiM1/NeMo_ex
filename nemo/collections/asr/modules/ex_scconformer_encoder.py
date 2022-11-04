@@ -31,7 +31,7 @@ from nemo.core.classes.mixins import adapter_mixins
 from nemo.core.classes.module import NeuralModule
 from nemo.core.neural_types import AcousticEncodedRepresentation, LengthsType, NeuralType, SpectrogramType, LogprobsType
 from nemo.core.neural_types.elements import LabelsType
-from nemo.collections.asr.parts.submodules.exemplar_modules import nnExemplarsMH
+from nemo.collections.asr.parts.submodules.exemplar_modules import nnExemplarsMH, nnExemplarsSimple
 
 from nemo.collections.asr.modules.conv_asr import ConvASRDecoder
 from torch.utils.checkpoint import checkpoint # # gradient/activation checkpointing
@@ -121,8 +121,8 @@ class SelfConditionedExemplarConformerEncoder(NeuralModule, Exportable):
         return OrderedDict(
             {
                 "audio_signal": NeuralType(('B', 'D', 'T'), SpectrogramType()),
-                "labels": NeuralType(('B', 'T'), SpectrogramType()),
-                "labels_lengths": NeuralType(('B'), LabelsType()),
+                # "labels": NeuralType(('B', 'T'), SpectrogramType()),
+                # "labels_lengths": NeuralType(('B'), LabelsType()),
                 "decoder": NeuralType(None),
                 "length": NeuralType(tuple('B'), LengthsType())
             }
@@ -249,17 +249,19 @@ class SelfConditionedExemplarConformerEncoder(NeuralModule, Exportable):
             raise ValueError(f"Not valid self_attention_model: '{self_attention_model}'!")
 
             
-        self.exMod = nnExemplarsMH(
-            inputSize=176,
-            phoneEmbedSize=4,
-            Q_dim=176,
-            V_dim=176,
-            num_phones=129,
-            numHeads=1,
-            attDim=176,
-            dropout_ex_g=0.0,
-            dropout_ex_r=0.0
-        )
+        # self.exMod = nnExemplarsMH(
+        #     inputSize=176,
+        #     phoneEmbedSize=4,
+        #     Q_dim=176,
+        #     V_dim=176,
+        #     num_phones=129,
+        #     numHeads=1,
+        #     attDim=176,
+        #     dropout_ex_g=0.0,
+        #     dropout_ex_r=0.0
+        # )
+
+        self.exMod = nnExemplarsSimple()
 
         self.layers = nn.ModuleList()
         for i in range(n_layers):
@@ -313,17 +315,19 @@ class SelfConditionedExemplarConformerEncoder(NeuralModule, Exportable):
         return custom_forward
 
     @typecheck()
-    def forward(self, audio_signal, labels, labels_lengths, decoder, length=None):
+    # def forward(self, audio_signal, labels, labels_lengths, decoder, length=None):
+    def forward(self, audio_signal, decoder, length=None):
         self.update_max_seq_length(seq_length=audio_signal.size(2), device=audio_signal.device)
         return self.forward_for_export(
             audio_signal=audio_signal, 
-            labels=labels, 
-            labels_lengths=labels_lengths, 
+            # labels=labels, 
+            # labels_lengths=labels_lengths, 
             decoder=decoder, 
             length=length)
 
     @typecheck()
-    def forward_for_export(self, audio_signal, labels, labels_lengths, decoder, length):
+    # def forward_for_export(self, audio_signal, labels, labels_lengths, decoder, length):
+    def forward_for_export(self, audio_signal, decoder, length):
         max_audio_length: int = audio_signal.size(-1)
 
         if max_audio_length > self.max_audio_length:
@@ -360,17 +364,21 @@ class SelfConditionedExemplarConformerEncoder(NeuralModule, Exportable):
         else:
             pad_mask = None
 
-        print("encoder audio_signal.size():", audio_signal.size())
-        print("encoder audio_signal_length.size():", length.size())
-        print("encoder labels.size():", labels.size())
-        print("encoder label_lens.size():", labels_lengths.size())
+        # print("encoder audio_signal.size():", audio_signal.size())
+        # print("encoder audio_signal_length.size():", length.size())
+        # print("encoder labels.size():", labels.size())
+        # print("encoder label_lens.size():", labels_lengths.size())
 
         A, _ = self.exMod(
             features = audio_signal,
             ex_features = audio_signal,
-            ex_phones = labels
+            ex_phones = None
         )
-        print("encoder A.size():", A.size())
+        # print("encoder A.size():", A.size())
+        # for i in range(5):
+        #     print("\nCompare new features with old:")
+        #     print(A[i])
+        #     print(audio_signal[i], "\n")
 
         iterim_posteriors = []
         for lth, layer in enumerate(self.layers):

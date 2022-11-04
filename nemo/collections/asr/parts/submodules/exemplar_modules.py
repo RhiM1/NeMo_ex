@@ -317,3 +317,60 @@ class nnExemplarsMH(nn.Module):
         # print("A_feats.size():", A_feats.size())
 
         return A_feats, W_logits
+
+
+
+class nnExemplarsSimple(nn.Module):
+    # Exemplar model incorporating multi-head attention for exemplar weighting, 
+    # with separate attention for the acoustic and phonetic information.
+    def __init__(
+            self, 
+            num_phones = 129, 
+            inputSize = 40, 
+            phoneEmbedSize = 4,
+            Q_dim = 32,
+            V_dim = 32, 
+            numHeads = 2, 
+            attDim = 256, 
+            dropout_ex_r = 0.0, 
+            dropout_ex_g = 0.0
+            ):
+        super(nnExemplarsSimple, self).__init__()
+
+        # self.num_phones = num_phones
+        # self.phoneEmbedSize = phoneEmbedSize
+        # self.phoneContext = 0
+        # self.Q_dim = Q_dim
+        # self.inputSize = inputSize
+        # self.attDim = attDim
+        # self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.sm = nn.Softmax(dim = 1)
+
+
+    def forward(self, features, ex_features, ex_phones, gamma = 1.0):
+
+        featuresSize = features.size()
+        ex_features = ex_features[0:int(round(featuresSize[0] / 2, 0))]
+
+        # print("submod features size:", features.size())
+        # print("submod ex_features size:", ex_features.size())
+
+        features = features.view(features.size()[0] * features.size()[1], -1)
+        ex_features = ex_features.view(ex_features.size()[0] * ex_features.size()[1], -1)
+
+        # print("submod viewed features size:", features.size())
+        # print("submod viewed ex_features size:", ex_features.size())
+
+        W = torch.matmul(features, torch.t(nn.functional.normalize(ex_features, dim = -1)))
+
+        # print("submod W size:", W.size())
+
+        A = torch.matmul(self.sm(1000 * W), ex_features)
+
+        # print("submod A size:", A.size())
+
+        A = A.reshape(featuresSize)
+        
+        # print("submod final A size:", A.size())
+
+        return A, W

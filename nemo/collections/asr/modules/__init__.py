@@ -24,6 +24,7 @@ from nemo.collections.asr.modules.conformer_encoder import ConformerEncoder, Con
 
 from nemo.collections.asr.modules.scconformer_encoder import SelfConditionedConformerEncoder, SelfConditionedConformerEncoderAdapter
 from nemo.collections.asr.modules.folded_scconformer_encoder import FoldedSelfConditionedConformerEncoder, FoldedSelfConditionedConformerEncoderAdapter 
+from nemo.collections.asr.modules.ex_scconformer_encoder import SelfConditionedExemplarConformerEncoder, SelfConditionedExemplarConformerEncoderAdapter
 
 #from nemo.collections.asr.modules.compositional_scconformer_encoder import CompositionalSelfConditionedConformerEncoder, CompositionalSelfConditionedConformerEncoderAdapter
 #from nemo.collections.asr.modules.exp3_ctx_compositional_scconformer_encoder import experiment3
