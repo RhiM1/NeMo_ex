@@ -384,7 +384,7 @@ class nnExemplarsSimple(nn.Module):
 
 
 
-class nnExemplarsSimple(nn.Module):
+class nnExemplarsSimplePhones(nn.Module):
     # Exemplar model incorporating multi-head attention for exemplar weighting, 
     # with separate attention for the acoustic and phonetic information.
     def __init__(

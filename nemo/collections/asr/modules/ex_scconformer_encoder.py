@@ -31,7 +31,7 @@ from nemo.core.classes.mixins import adapter_mixins
 from nemo.core.classes.module import NeuralModule
 from nemo.core.neural_types import AcousticEncodedRepresentation, LengthsType, NeuralType, SpectrogramType, LogprobsType
 from nemo.core.neural_types.elements import LabelsType
-from nemo.collections.asr.parts.submodules.exemplar_modules import nnExemplarsMH, nnExemplarsSimple
+from nemo.collections.asr.parts.submodules.exemplar_modules import nnExemplarsMH, nnExemplarsSimple, nnExemplarsSimplePhones
 
 from nemo.collections.asr.modules.conv_asr import ConvASRDecoder
 from torch.utils.checkpoint import checkpoint # # gradient/activation checkpointing
@@ -261,7 +261,7 @@ class SelfConditionedExemplarConformerEncoder(NeuralModule, Exportable):
         #     dropout_ex_r=0.0
         # )
 
-        self.exMod = nnExemplarsSimple()
+        self.exMod = nnExemplarsSimplePhones()
 
         self.layers = nn.ModuleList()
         for i in range(n_layers):
