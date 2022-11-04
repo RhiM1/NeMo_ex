@@ -374,6 +374,10 @@ class SelfConditionedExemplarConformerEncoder(NeuralModule, Exportable):
             ex_features = audio_signal,
             ex_phones = None
         )
+
+
+        # A = audio_signal
+
         # print("encoder A.size():", A.size())
         # for i in range(5):
         #     print("\nCompare new features with old:")

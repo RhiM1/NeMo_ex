@@ -326,7 +326,7 @@ class nnExemplarsSimple(nn.Module):
     def __init__(
             self, 
             num_phones = 129, 
-            inputSize = 40, 
+            inputSize = 176, 
             phoneEmbedSize = 4,
             Q_dim = 32,
             V_dim = 32, 
@@ -344,13 +344,18 @@ class nnExemplarsSimple(nn.Module):
         # self.inputSize = inputSize
         # self.attDim = attDim
         # self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+        # self.V = nn.Linear(inputSize, inputSize, bias = False)
+        # self.V.apply(init_weights_identity)
+
+
         self.sm = nn.Softmax(dim = 1)
 
 
     def forward(self, features, ex_features, ex_phones, gamma = 1.0):
 
         featuresSize = features.size()
-        ex_features = ex_features[0:int(round(featuresSize[0] / 2, 0))]
+        # ex_features = ex_features[0:int(round(featuresSize[0] / 2, 0))]
 
         # print("submod features size:", features.size())
         # print("submod ex_features size:", ex_features.size())
@@ -361,6 +366,7 @@ class nnExemplarsSimple(nn.Module):
         # print("submod viewed features size:", features.size())
         # print("submod viewed ex_features size:", ex_features.size())
 
+        W = torch.matmul(self.V(features), torch.t(nn.functional.normalize(ex_features, dim = -1)))
         W = torch.matmul(features, torch.t(nn.functional.normalize(ex_features, dim = -1)))
 
         # print("submod W size:", W.size())
