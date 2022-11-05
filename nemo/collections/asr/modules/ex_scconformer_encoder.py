@@ -121,7 +121,7 @@ class SelfConditionedExemplarConformerEncoder(NeuralModule, Exportable):
         return OrderedDict(
             {
                 "audio_signal": NeuralType(('B', 'D', 'T'), SpectrogramType()),
-                "ex_labels": NeuralType(('B', 'T'), SpectrogramType()),
+                "ex_labels": NeuralType(('B', 'T'), LabelsType(), optional=True),
                 # "labels_lengths": NeuralType(('B'), LabelsType()),
                 "decoder": NeuralType(None),
                 "length": NeuralType(tuple('B'), LengthsType())
@@ -261,7 +261,7 @@ class SelfConditionedExemplarConformerEncoder(NeuralModule, Exportable):
         #     dropout_ex_r=0.0
         # )
 
-        self.exMod = nnExemplarsSimplePhones()
+        self.exMod = nnExemplarsSimple()
 
         self.layers = nn.ModuleList()
         for i in range(n_layers):
@@ -364,10 +364,6 @@ class SelfConditionedExemplarConformerEncoder(NeuralModule, Exportable):
         else:
             pad_mask = None
 
-        # print("encoder audio_signal.size():", audio_signal.size())
-        # print("encoder audio_signal_length.size():", length.size())
-        # print("encoder labels.size():", labels.size())
-        # print("encoder label_lens.size():", labels_lengths.size())
 
         A, _ = self.exMod(
             features = audio_signal,
@@ -376,13 +372,6 @@ class SelfConditionedExemplarConformerEncoder(NeuralModule, Exportable):
         )
 
 
-        # A = audio_signal
-
-        # print("encoder A.size():", A.size())
-        # for i in range(5):
-        #     print("\nCompare new features with old:")
-        #     print(A[i])
-        #     print(audio_signal[i], "\n")
 
         iterim_posteriors = []
         for lth, layer in enumerate(self.layers):

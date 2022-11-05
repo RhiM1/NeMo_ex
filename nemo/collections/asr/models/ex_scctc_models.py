@@ -590,7 +590,7 @@ class EncDecExSCCTCModel(ASRModel, ExportableEncDecModel, ASRModuleMixin):
 
 
     # PTL-specific methods
-    def training_step(self, batch, batch_nb):
+    def training_step(self, batch, batch_nb, ex_labels=None):
         signal, signal_len, transcript, transcript_len = batch
         if isinstance(batch, DALIOutputs) and batch.has_processed_signal:
             log_probs, iterim_posteriors, encoded_len, greedy_predictions = self.forward(
@@ -636,10 +636,10 @@ class EncDecExSCCTCModel(ASRModel, ExportableEncDecModel, ASRModuleMixin):
         signal, signal_len, transcript, transcript_len, sample_id = batch
         if isinstance(batch, DALIOutputs) and batch.has_processed_signal:
             log_probs, encoded_len, predictions = self.forward(
-                processed_signal=signal, processed_signal_length=signal_len, ex_labels=ex_labels
+                processed_signal=signal, processed_signal_length=signal_len
             )
         else:
-            log_probs, encoded_len, predictions = self.forward(input_signal=signal, input_signal_length=signal_len, ex_labels=ex_labels)
+            log_probs, encoded_len, predictions = self.forward(input_signal=signal, input_signal_length=signal_len)
 
         transcribed_texts, _ = self._wer.decoding.ctc_decoder_predictions_tensor(
             predictions=log_probs, predictions_len=encoded_len, return_hypotheses=False,
@@ -655,10 +655,10 @@ class EncDecExSCCTCModel(ASRModel, ExportableEncDecModel, ASRModuleMixin):
         signal, signal_len, transcript, transcript_len = batch
         if isinstance(batch, DALIOutputs) and batch.has_processed_signal:
             log_probs, encoded_len, predictions = self.forward(
-                processed_signal=signal, processed_signal_length=signal_len, ex_labels=ex_labels
+                processed_signal=signal, processed_signal_length=signal_len
             )
         else:
-            log_probs, encoded_len, predictions = self.forward(input_signal=signal, input_signal_length=signal_len, ex_labels=ex_labels)
+            log_probs, encoded_len, predictions = self.forward(input_signal=signal, input_signal_length=signal_len)
 
         loss_value = self.loss(
             log_probs=log_probs, targets=transcript, input_lengths=encoded_len, target_lengths=transcript_len
