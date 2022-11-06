@@ -371,7 +371,7 @@ class nnExemplarsSimple(nn.Module):
 
         # print("submod W size:", W.size())
 
-        A = torch.matmul(self.sm(100 * W), ex_features)
+        A = torch.matmul(self.sm(W), ex_features)
 
         # print("submod A size:", A.size())
 

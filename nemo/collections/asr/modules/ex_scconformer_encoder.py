@@ -261,7 +261,8 @@ class SelfConditionedExemplarConformerEncoder(NeuralModule, Exportable):
         #     dropout_ex_r=0.0
         # )
 
-        self.exMod = nnExemplarsSimplePhones()
+        # self.exMod = nnExemplarsSimplePhones()
+        self.exMod = nnExemplarsSimple()
 
         self.layers = nn.ModuleList()
         for i in range(n_layers):
@@ -370,6 +371,12 @@ class SelfConditionedExemplarConformerEncoder(NeuralModule, Exportable):
             ex_features = audio_signal,
             ex_phones = ex_labels
         )
+
+        # for j in range(10):
+        #     print(A[0, j])
+        #     print(audio_signal[0, j])
+        #     print(A[-1, j])
+        #     print(audio_signal[-1, j])
 
 
 
