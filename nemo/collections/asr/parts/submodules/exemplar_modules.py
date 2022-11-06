@@ -360,23 +360,32 @@ class nnExemplarsSimple(nn.Module):
         # print("submod features size:", features.size())
         # print("submod ex_features size:", ex_features.size())
 
-        features = features.view(features.size()[0] * features.size()[1], -1)
-        ex_features = ex_features.view(ex_features.size()[0] * ex_features.size()[1], -1)
+        features1 = features.view(features.size()[0] * features.size()[1], -1)
+        ex_features1 = ex_features.view(ex_features.size()[0] * ex_features.size()[1], -1)
 
         # print("submod viewed features size:", features.size())
         # print("submod viewed ex_features size:", ex_features.size())
 
         # W = torch.matmul(self.V(features), torch.t(nn.functional.normalize(ex_features, dim = -1)))
-        W = torch.matmul(features, torch.t(nn.functional.normalize(ex_features, dim = -1)))
+        W = torch.matmul(features1, torch.t(nn.functional.normalize(ex_features1, dim = -1)))
 
         # print("submod W size:", W.size())
 
-        A = torch.matmul(self.sm(W), ex_features)
+        A = torch.matmul(self.sm(1000 * W), ex_features1)
 
         # print("submod A size:", A.size())
 
-        A = A.reshape(featuresSize)
+        # print(features1[23])
+        # print(A[23])
+
+
+        A = A.view(featuresSize)
         
+        # print(A[0, 0])
+        # print(features[0, 0])
+
+        # print(A[1, 101])
+        # print(features[1, 101])
         # print("submod final A size:", A.size())
 
         return A, W

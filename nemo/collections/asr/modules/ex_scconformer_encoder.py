@@ -366,18 +366,17 @@ class SelfConditionedExemplarConformerEncoder(NeuralModule, Exportable):
             pad_mask = None
 
 
+        # print(audio_signal[1, 101])
+
+
         A, _ = self.exMod(
             features = audio_signal,
             ex_features = audio_signal,
             ex_phones = ex_labels
         )
 
-        # for j in range(10):
-        #     print(A[0, j])
-        #     print(audio_signal[0, j])
-        #     print(A[-1, j])
-        #     print(audio_signal[-1, j])
-
+        # print(A[1, 101])
+        # print(audio_signal[1, 101])
 
 
         iterim_posteriors = []
