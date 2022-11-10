@@ -346,10 +346,24 @@ class SelfConditionedExemplarConformerEncoder(NeuralModule, Exportable):
         else:
             audio_signal, length = self.pre_encode(audio_signal, length)
 
-        audio_signal, pos_emb = self.pos_enc(audio_signal)
+
+        A, _ = self.exMod(
+            features = audio_signal,
+            ex_features = audio_signal,
+            ex_phones = ex_labels
+        )
+
+
+
+        A, pos_emb = self.pos_enc(A)
         # adjust size
-        max_audio_length = audio_signal.size(1)
+        max_audio_length = A.size(1)
         # Create the self-attention and padding masks
+
+
+
+
+
 
         pad_mask = self.make_pad_mask(max_audio_length, length)
         att_mask = pad_mask.unsqueeze(1).repeat([1, max_audio_length, 1])
@@ -368,12 +382,6 @@ class SelfConditionedExemplarConformerEncoder(NeuralModule, Exportable):
 
         # print(audio_signal[1, 101])
 
-
-        A, _ = self.exMod(
-            features = audio_signal,
-            ex_features = audio_signal,
-            ex_phones = ex_labels
-        )
 
         # print(A[1, 101])
         # print(audio_signal[1, 101])
