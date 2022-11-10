@@ -343,7 +343,7 @@ class nnExemplarsSimple(nn.Module):
         # self.Q_dim = Q_dim
         # self.inputSize = inputSize
         # self.attDim = attDim
-        # self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
         # self.V = nn.Linear(inputSize, inputSize, bias = False)
         # self.V.apply(init_weights_identity)
@@ -367,7 +367,8 @@ class nnExemplarsSimple(nn.Module):
         # print("submod viewed ex_features size:", ex_features.size())
 
         # W = torch.matmul(self.V(features), torch.t(nn.functional.normalize(ex_features, dim = -1)))
-        W = torch.matmul(features1, torch.t(nn.functional.normalize(ex_features1, dim = -1)))
+        # W = torch.matmul(features1, torch.t(nn.functional.normalize(ex_features1, dim = -1)))
+        W = torch.eye(len(features1), device=self.device)
 
         # print("submod W size:", W.size())
 
