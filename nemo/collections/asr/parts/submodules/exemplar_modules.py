@@ -320,7 +320,7 @@ class nnExemplarsMH(nn.Module):
 
 
 
-class nnExemplarsSimple(nn.Module):
+class nnExemplarSimple(nn.Module):
     # Exemplar model incorporating multi-head attention for exemplar weighting, 
     # with separate attention for the acoustic and phonetic information.
     def __init__(
@@ -335,7 +335,7 @@ class nnExemplarsSimple(nn.Module):
             dropout_ex_r = 0.0, 
             dropout_ex_g = 0.0
             ):
-        super(nnExemplarsSimple, self).__init__()
+        super(nnExemplarSimple, self).__init__()
 
         # self.num_phones = num_phones
         # self.phoneEmbedSize = phoneEmbedSize
@@ -367,12 +367,12 @@ class nnExemplarsSimple(nn.Module):
         # print("submod viewed ex_features size:", ex_features.size())
 
         # W = torch.matmul(self.V(features), torch.t(nn.functional.normalize(ex_features, dim = -1)))
-        # W = torch.matmul(features1, torch.t(nn.functional.normalize(ex_features1, dim = -1)))
-        W = torch.eye(len(features1), device=self.device)
+        W = torch.matmul(features1, torch.t(nn.functional.normalize(ex_features1, dim = -1)))
+        # W = torch.eye(len(features1), device=self.device)
 
         # print("submod W size:", W.size())
 
-        A = torch.matmul(self.sm(W), ex_features1)
+        A = torch.matmul(self.sm(1000 * W), ex_features1)
 
         # print("submod A size:", A.size())
 
@@ -390,6 +390,61 @@ class nnExemplarsSimple(nn.Module):
         # print("submod final A size:", A.size())
 
         return A, W
+
+
+
+
+
+
+class nnExemplarNoParam(nn.Module):
+    # Exemplar model incorporating multi-head attention for exemplar weighting, 
+    # with separate attention for the acoustic and phonetic information.
+    def __init__(
+            self, 
+            ex_weight = 1,
+            num_phones = 129, 
+            inputSize = 176, 
+            phoneEmbedSize = 4,
+            Q_dim = 32,
+            V_dim = 32, 
+            numHeads = 2, 
+            attDim = 256, 
+            dropout_ex_r = 0.0, 
+            dropout_ex_g = 0.0
+            ):
+        super(nnExemplarNoParam, self).__init__()
+
+        # self.num_phones = num_phones
+        # self.phoneEmbedSize = phoneEmbedSize
+        # self.phoneContext = 0
+        # self.Q_dim = Q_dim
+        # self.inputSize = inputSize
+        # self.attDim = attDim
+        self.ex_weight = ex_weight
+        print("model ex_weight:", self.ex_weight)
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+        # self.V = nn.Linear(inputSize, inputSize, bias = False)
+        # self.V.apply(init_weights_identity)
+
+        self.sm = nn.Softmax(dim = 1)
+
+
+    def forward(self, features, ex_features, ex_phones, gamma = 1.0):
+
+        featuresSize = features.size()
+
+        features1 = features.view(features.size()[0] * features.size()[1], -1)
+        ex_features1 = ex_features.view(ex_features.size()[0] * ex_features.size()[1], -1)
+
+        W = torch.matmul(features1, torch.t(nn.functional.normalize(ex_features1, dim = -1)))
+        A = torch.matmul(self.sm(self.ex_weight * W), ex_features1).view(featuresSize)
+    
+        return A, W
+
+
+
+
 
 
 

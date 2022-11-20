@@ -31,7 +31,7 @@ from nemo.core.classes.mixins import adapter_mixins
 from nemo.core.classes.module import NeuralModule
 from nemo.core.neural_types import AcousticEncodedRepresentation, LengthsType, NeuralType, SpectrogramType, LogprobsType
 from nemo.core.neural_types.elements import LabelsType
-from nemo.collections.asr.parts.submodules.exemplar_modules import nnExemplarsMH, nnExemplarsSimple, nnExemplarsSimplePhones
+from nemo.collections.asr.parts.submodules.exemplar_modules import nnExemplarNoParam, nnExemplarSimple
 
 from nemo.collections.asr.modules.conv_asr import ConvASRDecoder
 from torch.utils.checkpoint import checkpoint # # gradient/activation checkpointing
@@ -144,6 +144,7 @@ class SelfConditionedExemplarConformerEncoder(NeuralModule, Exportable):
         feat_in,
         n_layers,
         d_model,
+        ex_weight=1,
         feat_out=-1,
         subsampling='striding',
         subsampling_factor=4,
@@ -176,6 +177,7 @@ class SelfConditionedExemplarConformerEncoder(NeuralModule, Exportable):
         d_ff = d_model * ff_expansion_factor
         self.d_model = d_model
         self._feat_in = feat_in
+        self._ex_weight = ex_weight
         self.scale = math.sqrt(self.d_model)
         if att_context_size:
             self.att_context_size = att_context_size
@@ -262,7 +264,7 @@ class SelfConditionedExemplarConformerEncoder(NeuralModule, Exportable):
         # )
 
         # self.exMod = nnExemplarsSimplePhones()
-        self.exMod = nnExemplarsSimple()
+        self.exMod = nnExemplarNoParam(ex_weight)
 
         self.layers = nn.ModuleList()
         for i in range(n_layers):
@@ -339,6 +341,7 @@ class SelfConditionedExemplarConformerEncoder(NeuralModule, Exportable):
                 audio_signal.size(0), max_audio_length, dtype=torch.int32, device=self.seq_range.device
             )
 
+
         audio_signal = torch.transpose(audio_signal, 1, 2) 
 
         if isinstance(self.pre_encode, nn.Linear):
@@ -347,22 +350,20 @@ class SelfConditionedExemplarConformerEncoder(NeuralModule, Exportable):
             audio_signal, length = self.pre_encode(audio_signal, length)
 
 
-        A, _ = self.exMod(
-            features = audio_signal,
-            ex_features = audio_signal,
-            ex_phones = ex_labels
-        )
-
-        # audio_signal, pos_emb = self.pos_enc(audio_signal)
-        # # adjust size
-        # max_audio_length = audio_signal.size(1)
-        # # Create the self-attention and padding masks
 
 
-        A, pos_emb = self.pos_enc(A)
+
+
+        audio_signal, pos_emb = self.pos_enc(audio_signal)
         # adjust size
-        max_audio_length = A.size(1)
+        max_audio_length = audio_signal.size(1)
         # Create the self-attention and padding masks
+
+
+        # A, pos_emb = self.pos_enc(A)
+        # # adjust size
+        # max_audio_length = A.size(1)
+        # # Create the self-attention and padding masks
 
         pad_mask = self.make_pad_mask(max_audio_length, length)
         att_mask = pad_mask.unsqueeze(1).repeat([1, max_audio_length, 1])
@@ -387,15 +388,24 @@ class SelfConditionedExemplarConformerEncoder(NeuralModule, Exportable):
         # print("Type A:", A.type(), A.shape)
         # print("input type:", audio_signal.type(), audio_signal.shape)
 
+        # print("audio pre:", audio_signal)
+                # Exemplar module
+        audio_signal, _ = self.exMod(
+            features = audio_signal,
+            ex_features = audio_signal,
+            ex_phones = ex_labels
+        )
+        # print("audio post:", audio_signal)
+
 
         iterim_posteriors = []
         for lth, layer in enumerate(self.layers):
             if self.checkpoint_every_n_layers > 0 and lth % self.checkpoint_every_n_layers == 0:
-                # audio_signal = checkpoint(self.create_custom_forward(layer), audio_signal, att_mask, pos_emb, pad_mask)
-                audio_signal = checkpoint(self.create_custom_forward(layer), A, att_mask, pos_emb, pad_mask)
+                audio_signal = checkpoint(self.create_custom_forward(layer), audio_signal, att_mask, pos_emb, pad_mask)
+                # audio_signal = checkpoint(self.create_custom_forward(layer), A, att_mask, pos_emb, pad_mask)
             else:
-                # audio_signal = layer(x=audio_signal, att_mask=att_mask, pos_emb=pos_emb, pad_mask=pad_mask)
-                audio_signal = layer(x=A, att_mask=att_mask, pos_emb=pos_emb, pad_mask=pad_mask)
+                audio_signal = layer(x=audio_signal, att_mask=att_mask, pos_emb=pos_emb, pad_mask=pad_mask)
+                # audio_signal = layer(x=A, att_mask=att_mask, pos_emb=pos_emb, pad_mask=pad_mask)
                 
             if lth != len(self.layers) - 1:
                 iterim_logits = decoder(encoder_output=audio_signal.transpose(1, 2), logits=True)
