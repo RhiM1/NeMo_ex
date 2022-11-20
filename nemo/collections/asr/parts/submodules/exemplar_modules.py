@@ -367,8 +367,8 @@ class nnExemplarsSimple(nn.Module):
         # print("submod viewed ex_features size:", ex_features.size())
 
         # W = torch.matmul(self.V(features), torch.t(nn.functional.normalize(ex_features, dim = -1)))
-        W = torch.matmul(features1, torch.t(nn.functional.normalize(ex_features1, dim = -1)))
-        # W = torch.eye(len(features1), device=self.device)
+        # W = torch.matmul(features1, torch.t(nn.functional.normalize(ex_features1, dim = -1)))
+        W = torch.eye(len(features1), device=self.device)
 
         # print("submod W size:", W.size())
 
