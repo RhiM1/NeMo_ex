@@ -384,8 +384,8 @@ class SelfConditionedExemplarConformerEncoder(NeuralModule, Exportable):
 
         # print(A[1, 101])
         # print(audio_signal[1, 101])
-        print("Type A:", A.type(), A.shape)
-        print("input type:", audio_signal.type(), audio_signal.shape)
+        # print("Type A:", A.type(), A.shape)
+        # print("input type:", audio_signal.type(), audio_signal.shape)
 
 
         iterim_posteriors = []
