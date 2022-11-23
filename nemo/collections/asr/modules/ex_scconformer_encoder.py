@@ -264,7 +264,8 @@ class SelfConditionedExemplarConformerEncoder(NeuralModule, Exportable):
         # )
 
         # self.exMod = nnExemplarsSimplePhones()
-        self.exMod = nnExemplarNoParam(ex_weight)
+        # self.exMod = nnExemplarNoParam(ex_weight)
+        self.exMod = nnExemplarSimple()
 
         self.layers = nn.ModuleList()
         for i in range(n_layers):

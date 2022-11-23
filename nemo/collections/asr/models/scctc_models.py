@@ -36,6 +36,7 @@ from nemo.core.classes.common import PretrainedModelInfo, typecheck
 from nemo.core.neural_types import AudioSignal, LabelsType, LengthsType, LogprobsType, NeuralType, SpectrogramType, AcousticEncodedRepresentation, LossType
 from nemo.core.neural_types.elements import BoolType
 from nemo.utils import logging
+from nemo.collections.asr.modules import RNNEncoder
 
 __all__ = ['EncDecSCCTCModel']
 
@@ -561,7 +562,17 @@ class EncDecSCCTCModel(ASRModel, ExportableEncDecModel, ASRModuleMixin):
         if self.spec_augmentation is not None and self.training:
             processed_signal = self.spec_augmentation(input_spec=processed_signal, length=processed_signal_length)
 
+        # print("is RNNEncoder instance:", isinstance(self.encoder, RNNEncoder))
+        # print(self.encoder)
         
+        # encoder_args = {
+        #     'audio_signal': processed_signal, 
+        #     'decoder':self.decoder if not isinstance(self.encoder, RNNEncoder) else None, 
+        #     'length':processed_signal_length,
+        #     'segment_lens':segment_lens,
+        #     'return_cross_utterance_attention':return_cross_utterance_attention
+        # }
+
         encoder_args = {
             'audio_signal': processed_signal, 
             'decoder':self.decoder, 
@@ -572,8 +583,13 @@ class EncDecSCCTCModel(ASRModel, ExportableEncDecModel, ASRModuleMixin):
         
         encoder_args = {k: v for k, v in encoder_args.items() if v is not None}
 
+
         encoder_out = self.encoder(**encoder_args)
+        # if len(encoder_out) >= 3:
         encoded, iterim_posteriors, encoded_len = encoder_out[:3]
+        # else:
+        #     encoded, encoded_len = encoder_out[:2]
+        #     iterim_posteriors = None
 
         additional_outputs = None if len(encoder_out) == 3 else encoder_out[3]
 

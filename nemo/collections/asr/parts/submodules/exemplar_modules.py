@@ -325,17 +325,32 @@ class nnExemplarSimple(nn.Module):
     # with separate attention for the acoustic and phonetic information.
     def __init__(
             self, 
-            num_phones = 129, 
+            # num_phones = 129, 
             inputSize = 176, 
-            phoneEmbedSize = 4,
-            Q_dim = 32,
-            V_dim = 32, 
-            numHeads = 2, 
-            attDim = 256, 
-            dropout_ex_r = 0.0, 
-            dropout_ex_g = 0.0
+            # phoneEmbedSize = 4,
+            # Q_dim = 32,
+            # V_dim = 32, 
+            # numHeads = 2, 
+            # attDim = 256, 
+            # dropout_ex_r = 0.0, 
+            # dropout_ex_g = 0.0,
+            # ex_weight = None
             ):
         super(nnExemplarSimple, self).__init__()
+
+        self.ex_ffnn = ffnn(
+            inputSize=inputSize,
+            embedDim=inputSize,
+            outputSize=inputSize
+        )
+        self.ex_ffnn.apply(init_weights_identity)
+
+        self.comp_ffnn = ffnn(
+            inputSize=inputSize,
+            embedDim=inputSize,
+            outputSize=inputSize
+        )
+        self.comp_ffnn.apply(init_weights_identity)
 
         # self.num_phones = num_phones
         # self.phoneEmbedSize = phoneEmbedSize
@@ -360,19 +375,21 @@ class nnExemplarSimple(nn.Module):
         # print("submod features size:", features.size())
         # print("submod ex_features size:", ex_features.size())
 
-        features1 = features.view(features.size()[0] * features.size()[1], -1)
-        ex_features1 = ex_features.view(ex_features.size()[0] * ex_features.size()[1], -1)
+        features_for_comp = self.comp_ffnn(features.view(features.size()[0] * features.size()[1], -1))
+        ex_features_for_comp = self.comp_ffnn(ex_features.view(ex_features.size()[0] * ex_features.size()[1], -1))
+
+        ex_features_for_summing = self.ex_ffnn(ex_features.view(ex_features.size()[0] * ex_features.size()[1], -1))
 
         # print("submod viewed features size:", features.size())
         # print("submod viewed ex_features size:", ex_features.size())
 
         # W = torch.matmul(self.V(features), torch.t(nn.functional.normalize(ex_features, dim = -1)))
-        W = torch.matmul(features1, torch.t(nn.functional.normalize(ex_features1, dim = -1)))
+        W = torch.matmul(features_for_comp, torch.t(nn.functional.normalize(ex_features_for_comp, dim = -1)))
         # W = torch.eye(len(features1), device=self.device)
 
         # print("submod W size:", W.size())
 
-        A = torch.matmul(self.sm(1000 * W), ex_features1)
+        A = torch.matmul(self.sm(W), ex_features_for_summing)
 
         # print("submod A size:", A.size())
 
